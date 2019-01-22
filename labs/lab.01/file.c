@@ -7,7 +7,7 @@ int main() {
     char prevc;
     char nextc;
 
-    char *example = "\"Quote\"";
+    char *example = "\"Quote\" // Comment";
 
     /*Multi
     line 
@@ -34,19 +34,24 @@ int main() {
     while ( (c = getc(fp)) != EOF ) {
         //Comment inside quotes
         if (c == '"') {
-        /*
             do {
                 putc(c, out);
-                prevc = c;
-            } while ((c = getc(out)) != '"');
+                if (c == '\\') {
+                    c = getc(fp);
+                    putc(c, out);
+                }
+            } while((c = getc(fp)) != '"');
+            putc(c, out);
         } else if (c == '\'') {
             do {
                 putc(c, out);
-                prevc = c;
-            } while ((c = getc(out)) != '\'');
-        */
-        }
-        
+                if (c == '\\') {
+                    c = getc(fp);
+                    putc(c, out);
+                }
+            } while((c = getc(fp)) != '\'');
+            putc(c, out);
+        } 
         else if (c == '/') {
             prevc = c;
             c = getc(fp);
@@ -74,7 +79,7 @@ int main() {
 
         //Other cases
         else {
-            printf("%c", c);
+            //printf("%c", c);
             putc(c, out);
         }
     }
