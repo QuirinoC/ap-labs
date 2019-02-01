@@ -12,7 +12,7 @@ int main() {
     /*Multi
     line 
     example*/
-    
+     
     FILE *out; //Out file
     out = fopen("clean.c", "w");
 
