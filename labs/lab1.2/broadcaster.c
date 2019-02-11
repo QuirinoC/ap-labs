@@ -46,7 +46,8 @@ int main(int argc, char *argv[]){
         }
 
 	//Create full path for file
-        char *fullpath = (char *) malloc(1 + 9 + strlen(pDirent->d_name));
+        //10 for size of "/dev/pts"
+        char *fullpath = (char *) malloc(strlen(pDirent->d_name) + 10);
         strcpy(fullpath, path);
         strcat(fullpath, pDirent->d_name);
         
