@@ -34,8 +34,8 @@ int main(int argc, char *argv[]){
         printf("Cannot open directory");
     }
     // Skip . and .. folders 
-    pDirent = readdir(dir); 
-    pDirent = readdir(dir);
+    readdir(dir); 
+    readdir(dir);
 
     int current;
 
