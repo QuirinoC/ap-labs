@@ -1,0 +1,234 @@
+#include <stdio.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <stdlib.h>
+#include <string.h>
+
+#define REPORT_FILE "report.txt"
+
+#define BUF_SIZE 1
+
+#define SIZE 0xFFF
+
+char **parseLine(char *line);
+
+void analizeLog(char *logFile, char *report);
+
+void addData(char **parsed_line, int *type_size, char**types, int **type_data_sizes,char ***type_data, int found, int i);
+
+
+int main(int argc, char **argv) {
+
+    if (argc < 1) {
+        printf("Usage:./dmesg-analizer.o logfile.txt\n");
+        return 1;
+    }
+    analizeLog("dmesg.txt",REPORT_FILE);
+    //analizeLog(argv[1], REPORT_FILE);
+
+    return 0;
+}
+
+int get_line_size(char *line) {
+    int i = 0;
+    while (*(line+i++) != '\0');
+    
+    return i * sizeof(char) - 1;
+}
+
+void add_data(char **parsed_line, int *type_size, char**types, int **type_data_sizes, char ***type_data, int found, int i){
+    
+    
+    if (found) {
+        *( *(type_data + i) + (int) (*(type_data_sizes + i))++)   = parsed_line[1];
+    } else {
+        *(types + *type_size) = parsed_line[0];
+        *(type_data_sizes + *type_size) = (int *) 1;
+        *(type_data + *type_size) = (char **) calloc(SIZE,sizeof(char**));
+        **(type_data + (*type_size)) = parsed_line[1];
+        (*type_size)++;
+    }
+};
+
+
+void analizeLog(char *logFile, char *report) {
+    printf("Generating Report from: [%s] log file\n", logFile);
+
+    // Implement your solution here.
+
+    printf("Report is generated at: [%s]\n", report);
+
+    //Input file related stuff
+    int fd = open(logFile, O_RDONLY);
+    char *c = (char *) calloc(BUF_SIZE, sizeof(char));
+    //Declaration for data
+    char *tmp_line = (char *) calloc(SIZE, sizeof(char));
+    char **parsed_line = calloc(SIZE, sizeof(char*));
+
+    //Data
+    int type_size = 0;
+    int found = 0;
+    char **types = (char **) calloc(SIZE, sizeof(char *));
+    int **type_data_sizes  = (int **) calloc(SIZE, sizeof(int *));
+    char ***type_data = (char ***) calloc(SIZE, sizeof(char **));
+
+    //Flags for block content
+    int block = 0;
+    char *block_header = (char *) calloc(SIZE, sizeof(char));
+
+    int i = 0;
+    int j = 0;
+    
+
+
+    while(read(fd, c, BUF_SIZE) > 0){
+        *(tmp_line + i++) = *c;
+
+        if (*c == '\n') {
+            tmp_line[i] = '\0';
+            parsed_line = parseLine(tmp_line);
+
+
+            if (block) {
+                if (strcmp(parsed_line[0], "BLOCK_HEADER") == 0){
+                    strcpy(parsed_line[0], block_header);
+                } else if (strcmp(parsed_line[0], "BLOCK_CONTENT") == 0){
+                    strcpy(parsed_line[0], block_header);
+                
+                } else {
+                    block = 0;
+                }
+                *(parsed_line + 1) = (*(parsed_line + 1) + 14);
+                while (**(parsed_line + 1) == ' '){
+                    *(parsed_line + 1) = (*(parsed_line + 1) + 1);
+                }
+            } else {
+                if (strcmp(parsed_line[0],"BLOCK_HEADER") == 0) {
+                    strcpy(block_header, parsed_line[1]);
+                    //printf(block_header);
+                    block=1;
+                    continue;
+                }
+            }
+        
+
+            for (i = 0; i < (int) type_size; i++) {
+                if (strcmp(*(types + i), parsed_line[0]) == 0) {
+                    found = 1;
+                    break;
+                }
+            }
+                //Add data
+                add_data(parsed_line, &type_size, types, type_data_sizes, type_data, found, i);
+                i = 0;
+            }
+        found = 0;
+
+    }
+    
+    //Free line data
+    free(tmp_line);
+    free(parsed_line);
+    
+    //Write to file
+    FILE *out = fopen(REPORT_FILE, "w");
+    for (i = 0; i < (int) type_size; i++) {
+
+        fwrite(types[i], 1, get_line_size(types[i]), out);
+        fwrite("\n", 1 , sizeof(char), out);
+        for (j = 0; j < (int) type_data_sizes[i]; j++){
+
+            if (type_data[i][j]){
+
+                fwrite("\t\t", 1, 2 * sizeof(char), out);
+                fwrite(type_data[i][j], 1, get_line_size(type_data[i][j]), out);
+
+            }
+        }
+    }
+    
+    //Free data
+    free(type_data);
+
+    //Close used files
+    close(fd);
+    fclose(out);
+}
+
+char **parseLine(char *line) {
+    
+    //Data to return
+    char **data = (char **) calloc(SIZE, sizeof(char *));
+  
+
+    //Data for log_type and message
+    char *log_type = (char *) calloc(SIZE, sizeof(char));
+    char *message   = (char *) calloc(SIZE, sizeof(char));
+
+    //Pointers to the start of log_type and message
+    char *log_type_helper = log_type;
+    char *message_helper = message; 
+
+    //Read time
+    while((*message++ = *line++) != ']');
+    line++;
+    
+     //Flag for generic log_types
+    int generic = 1;
+
+    //Flags for block log_types
+    int block_header = 0;
+    int block_content = 0;
+
+    //printf("%s %d NEPE", line, *line == ' ' && *(line+1)== ' ');
+    if (*line == ' ' && *(line+1)== ' '){
+        strcpy(log_type_helper, "BLOCK_CONTENT");
+        line++;line++;
+        
+        while((*message = *line) != '\n') {
+            message++;line++;
+        }
+    } else {
+        //Read log_type
+        while((*log_type = *line) != '\0'){
+            if (*line == ']'){
+                generic = 0;
+                *log_type++ = *line++;
+                break;
+            }
+            if (*line == ':'){
+                if (*(line+1) == ' ') {
+                    generic = 0;
+                    *log_type++ = *line++;
+                    break;
+                } else if (*(line+1) == '\n') {
+                    block_header = 1;
+                }
+            }
+            log_type++; line++;
+            
+        }
+
+        //Read rest of line
+        do {} while((*message++ = *line++) != '\0');
+        
+        
+        if (generic) {
+            strcpy(message_helper, log_type_helper);
+            strcpy(log_type_helper, "General: ");
+        }
+        if (block_header) {
+            strcpy(log_type_helper, "BLOCK_HEADER");            
+        }
+    }
+    //Assign to data
+    *data = log_type_helper;
+    *(data + 1) = message_helper;
+
+    //printf("%s",log_type_helper);
+    //free(log_type);
+    //free(message);
+
+    return data;
+    
+}
