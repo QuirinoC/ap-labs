@@ -133,10 +133,10 @@ int main(int argc, char *argv[]) {
 
 
     struct node tmp;
-    for (int i = 0; i < uniq_words; i++){
+    for (i = 0; i < uniq_words; i++){
         tmp = data[i];
         printf("%s [%d]: ", tmp.word, tmp.size);
-        for (int j = 0; j < tmp.size; j++) {
+        for (j = 0; j < tmp.size; j++) {
             printf("%d ", tmp.line_data[j]);
         }
         printf("\n");
