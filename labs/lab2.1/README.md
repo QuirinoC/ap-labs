@@ -21,3 +21,11 @@ For each clock pass an argument to clockWall
 ```
 ./clockWall NewYork=localhost:10001 Tokyo=localhost:10002 London=localhost:10003
 ```
+If running multiple clocks with & use 
+```
+kill -9 [PID]
+```
+Other wise the program will continue to execute and the port will not be unbinded
+
+Once clockwWall has no other clock to run the program will stop
+
