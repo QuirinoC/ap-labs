@@ -1,4 +1,4 @@
 make:
-	gcc cross-ref.c -o cross-ref
+	gcc cross-ref.c -std=c99 -o cross-ref
 clean:
 	rm cross-ref
