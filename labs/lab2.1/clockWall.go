@@ -79,6 +79,7 @@ func connHandler(c net.Conn, city string, wg *sync.WaitGroup, data *[]string, i 
 			break
 		}
 		(*data)[i] = string(tmp)
+		time.Sleep(1 * time.Second)
 	}
 
 }
