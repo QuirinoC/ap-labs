@@ -43,7 +43,7 @@ func addData(data *[]string, i int, str string) {
 
 func printData(data *[]string) {
 	var r = ""
-	time.Sleep(1 * time.Second)
+	time.Sleep(500 * time.Millisecond)
 	for {
 		r = ""
 		for _, s := range *data {
