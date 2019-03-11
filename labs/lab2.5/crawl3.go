@@ -13,6 +13,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"os"
@@ -23,10 +24,12 @@ import (
 //!+sema
 // tokens is a counting semaphore used to
 // enforce a limit of 20 concurrent requests.
-var tokens = make(chan struct{}, 20)
+var tokens = make(chan struct{}, 50)
 
-func crawl(url string) []string {
-	fmt.Println(url)
+// Avoid multiple goroutines modifying the map
+var mapToken = make(chan struct{}, 1)
+
+func crawl(url string, depthMap map[string]int, depthLimit int) []string {
 	tokens <- struct{}{} // acquire a token
 	list, err := links.Extract(url)
 	<-tokens // release the token
@@ -34,6 +37,24 @@ func crawl(url string) []string {
 	if err != nil {
 		log.Print(err)
 	}
+
+	mapToken <- struct{}{}
+
+	if depthMap[url] <= depthLimit {
+		fmt.Println(url, depthMap[url], depthLimit)
+	}
+	if depthMap[url] > depthLimit {
+		list = []string{}
+	}
+
+	//if depthMap[url] > depthLimit {
+	//	fmt.Println(url, depthMap[url])
+	//}
+	for _, link := range list {
+		depthMap[link] = depthMap[url] + 1
+	}
+	<-mapToken
+
 	return list
 }
 
@@ -42,12 +63,16 @@ func crawl(url string) []string {
 //!+
 func main() {
 	worklist := make(chan []string)
+	depthLimit := flag.Int("depth", 1, "Depth limit")
+	flag.Parse()
 	var n int // number of pending sends to worklist
 
 	// Start with the command-line arguments.
 	n++
-	go func() { worklist <- os.Args[1:] }()
+	go func() { worklist <- os.Args[2:] }()
 
+	// Keep track of depth for each link
+	depthMap := make(map[string]int)
 	// Crawl the web concurrently.
 	seen := make(map[string]bool)
 	for ; n > 0; n-- {
@@ -57,9 +82,11 @@ func main() {
 				seen[link] = true
 				n++
 				go func(link string) {
-					worklist <- crawl(link)
+					tmp := crawl(link, depthMap, *depthLimit)
+					worklist <- tmp
 				}(link)
 			}
 		}
 	}
+
 }
