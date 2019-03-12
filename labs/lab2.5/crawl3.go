@@ -24,7 +24,7 @@ import (
 //!+sema
 // tokens is a counting semaphore used to
 // enforce a limit of 20 concurrent requests.
-var tokens = make(chan struct{}, 50)
+var tokens = make(chan struct{}, 100)
 
 // Avoid multiple goroutines modifying the map
 var mapToken = make(chan struct{}, 1)
@@ -34,17 +34,17 @@ func crawl(url string, depthMap map[string]int, depthLimit int) []string {
 	list, err := links.Extract(url)
 	<-tokens // release the token
 
-	if err != nil {
-		log.Print(err)
-	}
-
 	mapToken <- struct{}{}
 
-	if depthMap[url] <= depthLimit {
-		fmt.Println(url, depthMap[url], depthLimit)
-	}
 	if depthMap[url] > depthLimit {
 		list = []string{}
+	} else {
+		if err != nil {
+			log.Print(err)
+		} else {
+			fmt.Printf("%s | Depth: %d\n", url, depthMap[url])
+		}
+
 	}
 
 	//if depthMap[url] > depthLimit {
