@@ -2,8 +2,8 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <signal.h>
-#include "logger.h"
 #include <string.h>
+#include "logger.h"
 
 #define RESET		0
 #define BRIGHT 		1
@@ -30,7 +30,7 @@ int initLogger(char *logType) {
     //Set output
     if (strlen(logType) == 0 | strcmp(logType, "stdout") == 0) {
         dest = 0;
-    } else if (strcmp(logType, "syslog")) {
+    } else if (strcmp(logType, "syslog") == 0) {
         dest = 1;
     }
 
@@ -45,23 +45,35 @@ void textcolor(int attr, int fg, int bg)
 	printf("%s", command);
 }
 
-int infor(const char *format, ...) {
+int infof(const char *format, ...) {
 	va_list arg;
 	int done;
 	va_start (arg, format);
-	textcolor(BRIGHT, WHITE, BLACK);
-	done = vfprintf (stdout, format, arg);
-	textcolor(RESET, WHITE, BLACK);	
-	va_end (arg);
+	if (dest == 0) {
+		textcolor(BRIGHT, WHITE, BLACK);
+		done = vfprintf (stdout, format, arg);
+		textcolor(RESET, WHITE, BLACK);	
+		va_end (arg);
+	} else {
+		openlog ("Logger-INFO", LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1);
+		vsyslog(LOG_INFO, format, arg);
+		closelog();
+	}
+	
 	return done;
 }
 int warnf(const char *format, ...) {
 	va_list arg;
 	int done;
 	va_start (arg, format);
-	textcolor(BRIGHT, YELLOW, BLACK);
-	done = vfprintf (stdout, format, arg);
-	textcolor(RESET, WHITE, BLACK);	
+	if (dest == 0) {
+		textcolor(BRIGHT, YELLOW, BLACK);
+		done = vfprintf (stdout, format, arg);
+		textcolor(RESET, WHITE, BLACK);	
+		
+	} else {
+
+	}
 	va_end (arg);
 	return done;
 }
@@ -69,9 +81,14 @@ int errorf(const char *format, ...) {
 	va_list arg;
 	int done;
 	va_start (arg, format);
-	textcolor(BRIGHT, RED, BLACK);
-	done = vfprintf (stdout, format, arg);
-	textcolor(RESET, WHITE, BLACK);	
+	if (dest == 0) {
+		textcolor(BRIGHT, RED, BLACK);
+		done = vfprintf (stdout, format, arg);
+		textcolor(RESET, WHITE, BLACK);	
+	
+	} else {
+
+	}
 	va_end (arg);
 	return done;
 }
@@ -79,9 +96,14 @@ int panicf(const char *format, ...) {
 	va_list arg;
 	int done;
 	va_start (arg, format);
-	textcolor(BRIGHT, RED, WHITE);
-	done = vfprintf (stdout, format, arg);
-	textcolor(RESET, WHITE, BLACK);	
+	if (dest == 0) {
+		textcolor(BRIGHT, RED, WHITE);
+		done = vfprintf (stdout, format, arg);
+		textcolor(RESET, WHITE, BLACK);	
+	} else {
+
+	}
+	
 	va_end (arg);
 	//abort();
 	return done;
