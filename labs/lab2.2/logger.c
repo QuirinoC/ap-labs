@@ -34,7 +34,7 @@ void textcolor(int attr, int fg, int bg)
 	printf("%s", command);
 }
 
-int infor(const char *format, ...) {
+int infof(const char *format, ...) {
 	va_list arg;
 	int done;
 	va_start (arg, format);
