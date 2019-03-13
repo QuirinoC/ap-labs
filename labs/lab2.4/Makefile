@@ -5,3 +5,6 @@ CC=gcc
 
 make:
 	$(CC) testLogger.c -o testLogger.out logger.c -rdynamic
+
+clean:
+	rm testLogger.out

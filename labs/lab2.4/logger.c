@@ -109,7 +109,6 @@ int panicf(const char *format, ...) {
 		vsyslog(LOG_ERR, format, arg);
 		closelog();
 	}
-	
 	va_end (arg);
 	//abort();
 	return done;
