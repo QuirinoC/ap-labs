@@ -71,8 +71,10 @@ int warnf(const char *format, ...) {
 		done = vfprintf (stdout, format, arg);
 		textcolor(RESET, WHITE, BLACK);	
 		
-	} else {
-
+	} else if(dest == 1) {
+		openlog ("Logger-WARN", LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1);
+		vsyslog(LOG_WARNING, format, arg);
+		closelog();
 	}
 	va_end (arg);
 	return done;
@@ -86,8 +88,10 @@ int errorf(const char *format, ...) {
 		done = vfprintf (stdout, format, arg);
 		textcolor(RESET, WHITE, BLACK);	
 	
-	} else {
-
+	} else if(dest == 1) {
+		openlog ("Logger-ERROR", LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1);
+		vsyslog(LOG_ERR, format, arg);
+		closelog();
 	}
 	va_end (arg);
 	return done;
@@ -100,8 +104,10 @@ int panicf(const char *format, ...) {
 		textcolor(BRIGHT, RED, WHITE);
 		done = vfprintf (stdout, format, arg);
 		textcolor(RESET, WHITE, BLACK);	
-	} else {
-
+	} else if(dest == 1) {
+		openlog ("Logger-PANIC", LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1);
+		vsyslog(LOG_ERR, format, arg);
+		closelog();
 	}
 	
 	va_end (arg);
