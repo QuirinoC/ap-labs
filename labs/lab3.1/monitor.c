@@ -1,15 +1,13 @@
 #include <ftw.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
+#include "logger.h"
 #define _XOPEN_SOURCE 500
 
 
 static int
-display_info(const char *fpath, const struct stat *sb,
-             int tflag, struct FTW *ftwbuf)
-{
+display_info(const char *fpath, const struct stat *sb, int tflag, struct FTW *ftwbuf) {
     printf("%-3s %2d %7jd   %-40s %d %s\n",
         (tflag == FTW_D) ?   "d"   : (tflag == FTW_DNR) ? "dnr" :
         (tflag == FTW_DP) ?  "dp"  : (tflag == FTW_F) ?   "f" :
@@ -23,5 +21,6 @@ display_info(const char *fpath, const struct stat *sb,
 int main(int argc, char *argv[]) {
     int flags = 0;
     int r = nftw(".", display_info, 20, flags);
+    panicf("Error");
     return 0;
 }

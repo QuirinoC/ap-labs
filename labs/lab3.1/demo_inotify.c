@@ -1,38 +1,13 @@
-/*************************************************************************\
-*                  Copyright (C) Michael Kerrisk, 2018.                   *
-*                                                                         *
-* This program is free software. You may use, modify, and redistribute it *
-* under the terms of the GNU General Public License as published by the   *
-* Free Software Foundation, either version 3 or (at your option) any      *
-* later version. This program is distributed without any warranty.  See   *
-* the file COPYING.gpl-v3 for details.                                    *
-\*************************************************************************/
 
-/* Listing 19-1 */
-
-/* demo_inotify.c
-
-   Demonstrate the use of the inotify API.
-
-   Usage: demo_inotify pathname...
-
-   The program monitors each of the files specified on the command line for all
-   possible file events.
-
-   This program is Linux-specific. The inotify API is available in Linux 2.6.13
-   and later.
-*/
 #include <sys/inotify.h>
 #include <limits.h>
 #include "tlpi_hdr.h"
 
-static void             /* Display information from inotify_event structure */
-displayInotifyEvent(struct inotify_event *i)
-{
+//Display event info
+static void displayInotifyEvent(struct inotify_event *i) {
     printf("    wd =%2d; ", i->wd);
     if (i->cookie > 0)
         printf("cookie =%4d; ", i->cookie);
-
     printf("mask = ");
     if (i->mask & IN_ACCESS)        printf("IN_ACCESS ");
     if (i->mask & IN_ATTRIB)        printf("IN_ATTRIB ");
@@ -91,10 +66,8 @@ main(int argc, char *argv[])
 
         if (numRead == -1)
             errExit("read");
-//	printf("Read something");
-   //     printf("Read %ld bytes from inotify fd\n", (long) numRead);
+
 	printf("BUF: %s\n", buf);
-        /* Process all of the events in buffer returned by read() */
 
         for (p = buf; p < buf + numRead; ) {
 //		printf("%s Debug\n", p);
