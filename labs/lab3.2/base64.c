@@ -4,8 +4,10 @@
 #include <getopt.h>
 #include <string.h>
 #include <inttypes.h>
+#include <signal.h>
 
 #define BUF_SIZE   0xFFFFFF
+#define SIGINFO 29
 //CODE FROM---------------------------------------------------------------------
 //https://stackoverflow.com/questions/342409/how-do-i-base64-encode-decode-in-c
 static char encoding_table[] = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H',
@@ -18,6 +20,12 @@ static char encoding_table[] = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H',
                                 '4', '5', '6', '7', '8', '9', '+', '/'};
 static char *decoding_table = NULL;
 static int mod_table[] = {0, 2, 1};
+
+float status = 0;
+
+void sig_handler(int sig) {
+    printf("%d%% of file processed\n", (int) status);
+}
 
 void build_decoding_table() {
 
@@ -37,7 +45,7 @@ char *base64_encode(const unsigned char *data,
     if (encoded_data == NULL) return NULL;
     int i, j;
     for (i = 0, j = 0; i < input_length;) {
-
+        status = (float) i / (float) input_length * 100;
         uint32_t octet_a = i < input_length ? (unsigned char)data[i++] : 0;
         uint32_t octet_b = i < input_length ? (unsigned char)data[i++] : 0;
         uint32_t octet_c = i < input_length ? (unsigned char)data[i++] : 0;
@@ -56,12 +64,11 @@ char *base64_encode(const unsigned char *data,
     return encoded_data;
 }
 
-
 unsigned char *base64_decode(const char *data,
                              size_t input_length,
                              size_t *output_length) {
     if (decoding_table == NULL) build_decoding_table();
-    if (input_length % 4 != 0) return NULL;
+    //if (input_length % 4 != 0) return NULL;
     *output_length = input_length / 4 * 3;
     if (data[input_length - 1] == '=') (*output_length)--;
     if (data[input_length - 2] == '=') (*output_length)--;
@@ -70,6 +77,7 @@ unsigned char *base64_decode(const char *data,
     if (decoded_data == NULL) return NULL;
     int i, j;
     for (i = 0, j = 0; i < input_length;) {
+        status = (float) i / (float) input_length * 100;
         uint32_t sextet_a = data[i] == '=' ? 0 & i++ : decoding_table[data[i++]];
         uint32_t sextet_b = data[i] == '=' ? 0 & i++ : decoding_table[data[i++]];
         uint32_t sextet_c = data[i] == '=' ? 0 & i++ : decoding_table[data[i++]];
@@ -87,7 +95,6 @@ unsigned char *base64_decode(const char *data,
     return decoded_data;
 }
 
-
 void base64_cleanup() {
     free(decoding_table);
 }
@@ -98,6 +105,11 @@ void print_usage() {
 }
 
 int main(int argc, char *argv[]) {
+    
+    //Set sighandler
+    signal(SIGINT, sig_handler); 
+    signal(SIGINFO, sig_handler);
+
     int opt= 0;
     int encode = -1; int decode = -1;
 
@@ -150,10 +162,13 @@ int main(int argc, char *argv[]) {
             return -1;
         }
     }
+    fclose(ifp);
+
     size_t output_size = 0;
 
     char *result;
 
+    infof("%s %s\n", (encode == 0) ? "Encoding" : "Decoding", filename);
     
     if (encode == 0) {
         result = base64_encode(buffer, strlen(buffer), &output_size);
@@ -163,7 +178,11 @@ int main(int argc, char *argv[]) {
         print_usage();
         return -1;
     }    
-
+    if (result == NULL) {
+            panicf("Cannot %s file [Empty file?]\n", (encode == 0) ? "encode":"decode");
+    }
+    //Clear table
+    base64_cleanup();
 
     FILE *ofp;
     ofp = fopen(output_file,"w");
@@ -174,12 +193,12 @@ int main(int argc, char *argv[]) {
         infof("Creating file [%s] for output\n", output_file);
     }
 
-    infof("%s %s\n", (encode == 0) ? "Encoding" : "Decoding", filename);
+    
 
     //printf(result);
     fwrite(result, output_size, 1, ofp);
 
-    fclose(ifp);
+    
     fclose(ofp);
     
 
