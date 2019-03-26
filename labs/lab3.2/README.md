@@ -20,7 +20,7 @@ Decoding
 ```
 ./base64 --decode encoded.txt
 ```
-Generates a file `decpded.txt` with the contents from `input.txt` decoded
+Generates a file `decoded.txt` with the contents from `input.txt` decoded
 
 How to test?
 ------------
@@ -43,11 +43,15 @@ Example
 ```
 ./base64 --decode encoded.txt
 ```
-    # Immediate ctrl-z
+```
+# Immediate ctrl-z
+```
 ```
 ps aux | grep base64
 ```
-    python test.py pid
-
-
-    fg
+```
+python test.py pid
+```
+```
+fg
+```
