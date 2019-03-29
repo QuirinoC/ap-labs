@@ -112,22 +112,25 @@ void *read_pid(char *pid, char *data) {
                           strcmp(buffer, "Threads") == 0 ? 4 : 
                           -1;
 
+            strcat(value, "\0");
             if (strcmp(buffer, "Name") == 0) {
-                pid_data->name = malloc(value_size * sizeof(value));
+                pid_data->name = malloc(value_size * sizeof(value) + 1);
                 strcpy(pid_data->name, value);
             } else if (strcmp(buffer, "State") == 0) {
-                pid_data->process_state = malloc(value_size * sizeof(value));
+                pid_data->process_state = malloc(value_size * sizeof(value) + 1);
                 strcpy(pid_data->process_state, value);
             } else if (strcmp(buffer, "Pid") == 0) {
-                pid_data->pid = malloc(value_size * sizeof(value));
+                pid_data->pid = malloc(value_size * sizeof(value) + 1);
                 strcpy(pid_data->pid, value);
             } else if (strcmp(buffer, "PPid") == 0) {
-                pid_data->ppid = malloc(value_size * sizeof(value));
+                pid_data->ppid = malloc(value_size * sizeof(value)+ 1);
                 strcpy(pid_data->ppid, value);
             } else if (strcmp(buffer, "VmHWM") == 0) {
-                pid_data->memory = malloc(value_size * sizeof(value));
-                strcpy(pid_data->memory, value);
-                
+                pid_data->memory = malloc(value_size * sizeof(value)+ 1);
+                strcpy(pid_data->memory, value); 
+            } else if (strcmp(buffer, "Threads") == 0) {
+                pid_data->thread_count = malloc(value_size * sizeof(value)+ 1);
+                strcpy(pid_data->thread_count, value); 
             }
 
             buffer_size = 0;
@@ -149,16 +152,12 @@ void *read_pid(char *pid, char *data) {
     build_path(pid, fd_path, "fd");
 
     if ((dir = opendir(fd_path)) != NULL) {
-        while ((ent = readdir(dir)) != NULL) {
-            
-        }
-
-
+        while ((ent = readdir(dir)) != NULL) 
+            fd_count++;
         closedir(dir);
     }
     free(fd_path);
     //free(ent);
-
 
     printf("Name %s\n",pid_data->name);
     printf("Pid %s\n",pid_data->pid);
@@ -169,7 +168,8 @@ void *read_pid(char *pid, char *data) {
     if (pid_data->process_state) {
         printf("State %s\n",pid_data->process_state);
     }
-    if (pid_data->memory) {
+    if (pid_data->memory != NULL) {
+        
         printf("Memory %s\n",pid_data->memory);
     }
     printf("Files %d\n", fd_count);
