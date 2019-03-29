@@ -5,6 +5,7 @@
 #include <string.h>
 #include <fcntl.h> 
 #include <unistd.h>
+#include <signal.h>
 
 #define SIZE 0xffffff
 #define PID_MAX 32768
@@ -47,21 +48,26 @@ char **get_pids(int *size) {
         /* could not open directory */
         *size = 0;
     }
+    //free(dir);
     *size = pid_count;
     return pids;
 }
 
-void build_path(char *pid, char *data) {
+void build_path(char *pid, char *data, char*folder) {
     strcat(data, "/proc/");
     strcat(data, pid);
-    strcat(data, "/status");
+    strcat(data, "/");
+    strcat(data, folder);
+    strcat(data, "\0");
 }
 
 void *read_pid(char *pid, char *data) {
-    char *path = (char *) calloc(30, sizeof(char));
-    build_path(pid, path);
+    char *path = malloc(30*sizeof(char));
+    build_path(pid, path, "status");
     //printf("%s\n", path);
-    
+    if (strcmp(pid, "697") != 0) {
+    //    return "";
+    }
 
     //Read process info
     int fd = open(path, O_RDONLY);
@@ -133,20 +139,42 @@ void *read_pid(char *pid, char *data) {
         
 
     }
-    printf("%s\n",pid_data->name);
-    printf("%s\n",pid_data->pid);
-    printf("%s\n",pid_data->ppid);
-    if (pid_data->thread_count) {
-        printf("%s\n",pid_data->thread_count);
-    }
-    printf("%s\n",pid_data->process_state);
-    if (pid_data->memory) {
-        printf("%s\n",pid_data->memory);
-    }
     
+    //Get files open
+    int fd_count = 0;
+    DIR *dir;
+    struct dirent *ent;
+
+    char *fd_path = malloc(30 * sizeof(char));
+    build_path(pid, fd_path, "fd");
+
+    if ((dir = opendir(fd_path)) != NULL) {
+        while ((ent = readdir(dir)) != NULL) {
+            
+        }
 
 
+        closedir(dir);
+    }
+    free(fd_path);
+    //free(ent);
 
+
+    printf("Name %s\n",pid_data->name);
+    printf("Pid %s\n",pid_data->pid);
+    printf("Ppid %s\n",pid_data->ppid);
+    if (pid_data->thread_count) {
+        printf("Threads %s\n",pid_data->thread_count);
+    }
+    if (pid_data->process_state) {
+        printf("State %s\n",pid_data->process_state);
+    }
+    if (pid_data->memory) {
+        printf("Memory %s\n",pid_data->memory);
+    }
+    printf("Files %d\n", fd_count);
+
+    
     free(c);
     free(buffer);
     free(value);
@@ -166,6 +194,7 @@ void process_table(process *table, char **pids, int pid_count) {
 }
 
 void clear();
+
 
 int main()
 {
