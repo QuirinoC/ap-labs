@@ -73,8 +73,7 @@ void *read_pid(char *pid, char *data) {
 
     int buffer_size = 0;
     int value_size = 0;
-
-    printf("__________________\n");
+    printf("--------------\n");
     while(read(fd, c, 1) > 0){
 
         if (*c == ':') {
@@ -85,9 +84,7 @@ void *read_pid(char *pid, char *data) {
                 }
 
                 *(value + value_size++) = *c;
-                if (*c == ' ') {
-                    printf("space");
-                }
+                
                 if (*c == '\n') {
                     *(buffer + buffer_size++) = '\0';
                     *(value + value_size++) = '\0';
@@ -96,10 +93,25 @@ void *read_pid(char *pid, char *data) {
                     break;
                 }
             }
-            printf("%s:%s\n", buffer, value);
+            if (
+                (strcmp(buffer, "Name") == 0) |
+                (strcmp(buffer, "Pid") == 0) |
+                (strcmp(buffer, "PPid") == 0) |
+                (strcmp(buffer, "State") == 0) |
+                (strcmp(buffer, "Threads") == 0)
+            ) {
+                printf("%s:%s", buffer, value);
+            } else {
+                //printf("|%s| | %d\n", buffer, strcmp(buffer, "Pid") == 0);
+                //printf("%s| :%s", buffer, value);
+            }
+            //printf("%s:%s\n", buffer, value);
+            //printf("%s\n", buffer);
         } 
-
-        *(buffer + buffer_size++) = *c;
+        if (*c != '\n') {
+            *(buffer + buffer_size++) = *c;
+        }
+        
 
     }
     free(c);
