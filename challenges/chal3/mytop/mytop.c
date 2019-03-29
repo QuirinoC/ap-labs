@@ -69,6 +69,14 @@ void *read_pid(char *pid, char *data) {
     //    return "";
     }
 
+    char *ppid;
+    char *name;
+    char *process_state;
+    char *memory;
+    char *thread_count;
+    int open_files;
+
+
     //Read process info
     int fd = open(path, O_RDONLY);
     //Free path from memory
@@ -114,23 +122,23 @@ void *read_pid(char *pid, char *data) {
 
             strcat(value, "\0");
             if (strcmp(buffer, "Name") == 0) {
-                pid_data->name = malloc(value_size * sizeof(value) + 1);
-                strcpy(pid_data->name, value);
+                name = malloc(value_size * sizeof(value) + 1);
+                strcpy(name, value);
             } else if (strcmp(buffer, "State") == 0) {
-                pid_data->process_state = malloc(value_size * sizeof(value) + 1);
-                strcpy(pid_data->process_state, value);
+                process_state = malloc(value_size * sizeof(value) + 1);
+                strcpy(process_state, value);
             } else if (strcmp(buffer, "Pid") == 0) {
-                pid_data->pid = malloc(value_size * sizeof(value) + 1);
-                strcpy(pid_data->pid, value);
+                pid = malloc(value_size * sizeof(value) + 1);
+                strcpy(pid, value);
             } else if (strcmp(buffer, "PPid") == 0) {
-                pid_data->ppid = malloc(value_size * sizeof(value)+ 1);
-                strcpy(pid_data->ppid, value);
+                ppid = malloc(value_size * sizeof(value)+ 1);
+                strcpy(ppid, value);
             } else if (strcmp(buffer, "VmHWM") == 0) {
-                pid_data->memory = malloc(value_size * sizeof(value)+ 1);
-                strcpy(pid_data->memory, value); 
+                memory = malloc(value_size * sizeof(value)+ 1);
+                strcpy(memory, value); 
             } else if (strcmp(buffer, "Threads") == 0) {
-                pid_data->thread_count = malloc(value_size * sizeof(value)+ 1);
-                strcpy(pid_data->thread_count, value); 
+                thread_count = malloc(value_size * sizeof(value)+ 1);
+                strcpy(thread_count, value); 
             }
 
             buffer_size = 0;
@@ -157,23 +165,13 @@ void *read_pid(char *pid, char *data) {
         closedir(dir);
     }
     free(fd_path);
-    //free(ent);
-
-    printf("Name %s\n",pid_data->name);
-    printf("Pid %s\n",pid_data->pid);
-    printf("Ppid %s\n",pid_data->ppid);
-    if (pid_data->thread_count) {
-        printf("Threads %s\n",pid_data->thread_count);
-    }
-    if (pid_data->process_state) {
-        printf("State %s\n",pid_data->process_state);
-    }
-    if (pid_data->memory != NULL) {
-        
-        printf("Memory %s\n",pid_data->memory);
-    }
-    printf("Files %d\n", fd_count);
-
+    
+    printf("%s: %s\n", "Name", name);
+    printf("%s: %s\n", "Pid", pid);
+    printf("%s: %s\n", "PPid", ppid);
+    printf("%s: %s\n", "State", process_state);
+    printf("%s: %s\n", "Memory", memory);
+    printf("%s: %s\n", "Threads", thread_count);
     
     free(c);
     free(buffer);
