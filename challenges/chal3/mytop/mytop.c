@@ -71,17 +71,6 @@ void *read_pid(char *pid, char *data) {
     //Data for pid
     process *pid_data = malloc(sizeof(process));
 
-    pid_data->name = malloc(100 * sizeof(char));
-    //
-    char **map = (char **) malloc(5 * sizeof(char *));
-    map[0] = pid_data->name;
-    map[1] = pid_data->process_state;
-    map[2] = pid_data->pid;
-    map[3] = pid_data->ppid;
-    map[4] = pid_data->thread_count;
-        
-
-
     //Data read from file
     char *c = (char *) calloc(1, sizeof(char));
     char *buffer = (char *) calloc(50, sizeof(char));
@@ -117,12 +106,24 @@ void *read_pid(char *pid, char *data) {
                           strcmp(buffer, "Threads") == 0 ? 4 : 
                           -1;
 
-            if (map_val >= 0) {
-                *(map + map_val) = malloc(value_size);
-                strcpy(map[map_val], value);
-                printf("%s %s", buffer, value);    
+            if (strcmp(buffer, "Name") == 0) {
+                pid_data->name = malloc(value_size * sizeof(value));
+                strcpy(pid_data->name, value);
+            } else if (strcmp(buffer, "State") == 0) {
+                pid_data->process_state = malloc(value_size * sizeof(value));
+                strcpy(pid_data->process_state, value);
+            } else if (strcmp(buffer, "Pid") == 0) {
+                pid_data->pid = malloc(value_size * sizeof(value));
+                strcpy(pid_data->pid, value);
+            } else if (strcmp(buffer, "PPid") == 0) {
+                pid_data->ppid = malloc(value_size * sizeof(value));
+                strcpy(pid_data->ppid, value);
+            } else if (strcmp(buffer, "VmHWM") == 0) {
+                pid_data->memory = malloc(value_size * sizeof(value));
+                strcpy(pid_data->memory, value);
+                
             }
-            
+
             buffer_size = 0;
             value_size = 0; 
         } 
@@ -132,19 +133,23 @@ void *read_pid(char *pid, char *data) {
         
 
     }
-    //strcpy(pid_data->name, map[0]);
-    //strcpy(pid_data->process_state, map[1]);
-    //strcpy(pid_data->pid, map[2]);
-    //strcpy(pid_data->ppid, map[3]);
-    //strcpy(pid_data->thread_count, map[4]);
-    //printf("%s \n", pid_data->process_state);
+    printf("%s\n",pid_data->name);
+    printf("%s\n",pid_data->pid);
+    printf("%s\n",pid_data->ppid);
+    if (pid_data->thread_count) {
+        printf("%s\n",pid_data->thread_count);
+    }
+    printf("%s\n",pid_data->process_state);
+    if (pid_data->memory) {
+        printf("%s\n",pid_data->memory);
+    }
+    
 
 
 
     free(c);
     free(buffer);
     free(value);
-    free(map);
     //Free current buffer
     //free(buffer);
     return "";
