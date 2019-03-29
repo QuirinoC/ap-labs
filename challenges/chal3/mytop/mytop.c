@@ -15,9 +15,14 @@ typedef struct {
     char *name;
     char *process_state;
     char *memory;
-    int thread_count;
+    char *thread_count;
     int open_files;
 } process;
+
+void print_process(process p) {
+    //printf("PID %s Parent %s Name %s State %s",
+     //       p->pid, p->ppid, p->name, p->state);
+}
 
 //Get every pid from /proc
 char **get_pids(int *size) {
@@ -40,7 +45,7 @@ char **get_pids(int *size) {
     }
     else {
         /* could not open directory */
-        *size = -1;
+        *size = 0;
     }
     *size = pid_count;
     return pids;
@@ -65,48 +70,61 @@ void *read_pid(char *pid, char *data) {
 
     //Data for pid
     process *pid_data = malloc(sizeof(process));
-    
-    
+
+    pid_data->name = malloc(100 * sizeof(char));
+    //
+    char **map = (char **) malloc(5 * sizeof(char *));
+    map[0] = pid_data->name;
+    map[1] = pid_data->process_state;
+    map[2] = pid_data->pid;
+    map[3] = pid_data->ppid;
+    map[4] = pid_data->thread_count;
+        
+
+
+    //Data read from file
     char *c = (char *) calloc(1, sizeof(char));
     char *buffer = (char *) calloc(50, sizeof(char));
     char *value = malloc(50 * sizeof(char));
 
     int buffer_size = 0;
     int value_size = 0;
-    printf("--------------\n");
+    printf("\n--------------\n");
     while(read(fd, c, 1) > 0){
 
         if (*c == ':') {
             while (read(fd, c, 1) > 0) {
 
-                if (*c == ' ') {
+                if (*c == ' ' | *c == '\t') {
                     continue;
                 }
 
+
                 *(value + value_size++) = *c;
                 
+                //If line jump is found make a valid string by adding null byte
                 if (*c == '\n') {
                     *(buffer + buffer_size++) = '\0';
-                    *(value + value_size++) = '\0';
-                    buffer_size = 0;
-                    value_size = 0;
+                    *(value + value_size++) = '\0';             
                     break;
                 }
             }
-            if (
-                (strcmp(buffer, "Name") == 0) |
-                (strcmp(buffer, "Pid") == 0) |
-                (strcmp(buffer, "PPid") == 0) |
-                (strcmp(buffer, "State") == 0) |
-                (strcmp(buffer, "Threads") == 0)
-            ) {
-                printf("%s:%s", buffer, value);
-            } else {
-                //printf("|%s| | %d\n", buffer, strcmp(buffer, "Pid") == 0);
-                //printf("%s| :%s", buffer, value);
+            
+            int map_val = strcmp(buffer, "Name") == 0 ? 0 : 
+                          strcmp(buffer, "State") == 0 ? 1 :
+                          strcmp(buffer, "Pid") == 0 ? 2 :
+                          strcmp(buffer, "PPid") == 0 ? 3 :
+                          strcmp(buffer, "Threads") == 0 ? 4 : 
+                          -1;
+
+            if (map_val >= 0) {
+                *(map + map_val) = malloc(value_size);
+                strcpy(map[map_val], value);
+                printf("%s %s", buffer, value);    
             }
-            //printf("%s:%s\n", buffer, value);
-            //printf("%s\n", buffer);
+            
+            buffer_size = 0;
+            value_size = 0; 
         } 
         if (*c != '\n') {
             *(buffer + buffer_size++) = *c;
@@ -114,8 +132,19 @@ void *read_pid(char *pid, char *data) {
         
 
     }
+    //strcpy(pid_data->name, map[0]);
+    //strcpy(pid_data->process_state, map[1]);
+    //strcpy(pid_data->pid, map[2]);
+    //strcpy(pid_data->ppid, map[3]);
+    //strcpy(pid_data->thread_count, map[4]);
+    //printf("%s \n", pid_data->process_state);
+
+
+
     free(c);
     free(buffer);
+    free(value);
+    free(map);
     //Free current buffer
     //free(buffer);
     return "";
