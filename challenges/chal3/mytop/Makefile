@@ -11,4 +11,4 @@ $(TARGET) : $(OBJFILES)
 
 clean:
 	rm -f $(OBJFILES) $(TARGET) *~
-	rm *.txt
+	find . -name "*.txt" -type f -delete
