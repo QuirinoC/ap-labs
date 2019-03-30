@@ -60,11 +60,11 @@ func getTime() string {
 	return buf.String()
 }
 
-func sendPrivateMessage(originUser, destinyUser string, text []string) {
-	if _, ok := users[destinyUser]; ok { //checks if user is already connected
-		fmt.Fprintln(users[destinyUser], originUser+"> "+strings.Join(text, " "))
+func sendPrivateMessage(origin, destination string, data []string) {
+	if _, ok := users[destination]; ok { //checks if user is already connected
+		fmt.Fprintln(users[destination], origin+"> "+strings.Join(data, " "))
 	} else {
-		fmt.Fprintln(users[originUser], "Invalid username")
+		fmt.Fprintln(users[destination], "Invalid username")
 	}
 
 }
