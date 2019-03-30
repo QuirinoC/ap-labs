@@ -84,7 +84,6 @@ void *read_pid(char *pid) {
     free(path);
 
     //Data for pid
-    process *pid_data = malloc(sizeof(process));
 
     //Data read from file
     char *c = (char *) calloc(1, sizeof(char));
@@ -127,23 +126,23 @@ void *read_pid(char *pid) {
 
             strcat(value, "\0");
             if (strcmp(buffer, "Name") == 0) {
-                name = malloc(value_size * sizeof(value) + 1);
+                name = malloc(value_size * sizeof(value));
                 strcpy(name, value);
             } else if (strcmp(buffer, "State") == 0) {
-                process_state = malloc(value_size * sizeof(value) + 1);
+                process_state = malloc(value_size * sizeof(value));
                 strcpy(process_state, value);
             } else if (strcmp(buffer, "Pid") == 0) {
-                pid = malloc(value_size * sizeof(value) + 1);
+                pid = malloc(value_size * sizeof(value));
                 strcpy(pid, value);
             } else if (strcmp(buffer, "PPid") == 0) {
-                ppid = malloc(value_size * sizeof(value)+ 1);
+                ppid = malloc(value_size * sizeof(value));
                 strcpy(ppid, value);
             } else if (strcmp(buffer, "VmHWM") == 0) {
                 mem_flag = 1;
-                memory = malloc(value_size * sizeof(value)+ 1);
+                memory = malloc(value_size * sizeof(value));
                 strcpy(memory, value); 
             } else if (strcmp(buffer, "Threads") == 0) {
-                thread_count = malloc(value_size * sizeof(value)+ 1);
+                thread_count = malloc(value_size * sizeof(value));
                 strcpy(thread_count, value); 
             }
 
@@ -154,7 +153,6 @@ void *read_pid(char *pid) {
         if ((*c != '\n')) {
             *(buffer + buffer_size++) = *c;
         }
-        
 
     }
     
@@ -186,6 +184,14 @@ void *read_pid(char *pid) {
     free(c);
     free(buffer);
     free(value);
+    free(pid);
+    free(ppid);
+    if (name != NULL) {
+        //free(name);
+    }
+    //
+    free(process_state);
+    //free(memory);
     //Free current buffer
     //free(buffer);
     return "";
@@ -193,9 +199,9 @@ void *read_pid(char *pid) {
 
 void process_table(char **pids, int pid_count) {
     int i;
-    printf("+-------+--------+---------------------+--------------+----------+----------+------------+\n");
-    printf("|  PID  | Parent |       Name          |   State      |  Memory  | #Threads | Open Files |\n");
-    printf("+-------+--------+---------------------+--------------+----------+----------+------------+\n");
+    printf("+-------+--------+----------------------+--------------+----------+----------+------------+\n");
+    printf("|  PID  | Parent |       Name           |   State      |  Memory  | #Threads | Open Files |\n");
+    printf("+-------+--------+----------------------+--------------+----------+----------+------------+\n");
     for (i = 0; i < pid_count; i++) {
         read_pid(pids[i]);
     }
@@ -213,12 +219,13 @@ int main()
     
     //Allocate as many procesess we have
     process *table = malloc(PID_MAX * sizeof(pid_count));
-
-    printf("%d", sizeof(process));
+    int c = 0;
+    
     while (1) {
         clrscr();
+        printf("%d\n", c++);
         process_table(pids, pid_count);
-        sleep(2);
+        sleep(1);
     }
     
     return 0;
