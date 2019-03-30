@@ -61,7 +61,8 @@ void build_path(char *pid, char *data, char*folder) {
     strcat(data, "\0");
 }
 
-void *read_pid(char *pid, char *data) {
+void *read_pid(char *pid) {
+    //if (atoi(pid) > 100) return "";
     char *path = malloc(30*sizeof(char));
     build_path(pid, path, "status");
     //printf("%s\n", path);
@@ -92,7 +93,10 @@ void *read_pid(char *pid, char *data) {
 
     int buffer_size = 0;
     int value_size = 0;
-    printf("\n--------------\n");
+
+    //Sets if memory is set
+    int mem_flag = 0;
+
     while(read(fd, c, 1) > 0){
 
         if (*c == ':') {
@@ -102,8 +106,9 @@ void *read_pid(char *pid, char *data) {
                     continue;
                 }
 
-
-                *(value + value_size++) = *c;
+                if (*c != '\n') {
+                    *(value + value_size++) = *c;
+                }
                 
                 //If line jump is found make a valid string by adding null byte
                 if (*c == '\n') {
@@ -134,6 +139,7 @@ void *read_pid(char *pid, char *data) {
                 ppid = malloc(value_size * sizeof(value)+ 1);
                 strcpy(ppid, value);
             } else if (strcmp(buffer, "VmHWM") == 0) {
+                mem_flag = 1;
                 memory = malloc(value_size * sizeof(value)+ 1);
                 strcpy(memory, value); 
             } else if (strcmp(buffer, "Threads") == 0) {
@@ -143,14 +149,21 @@ void *read_pid(char *pid, char *data) {
 
             buffer_size = 0;
             value_size = 0; 
-        } 
-        if (*c != '\n') {
+        }
+        
+        if ((*c != '\n')) {
             *(buffer + buffer_size++) = *c;
         }
         
 
     }
     
+    //Set if flag not present
+    if (mem_flag == 0) {
+        memory = malloc(value_size * sizeof("0 kB")+ 1);
+        strcpy(memory, "0 kB"); 
+    }
+
     //Get files open
     int fd_count = 0;
     DIR *dir;
@@ -166,13 +179,10 @@ void *read_pid(char *pid, char *data) {
     }
     free(fd_path);
     
-    printf("%s: %s\n", "Name", name);
-    printf("%s: %s\n", "Pid", pid);
-    printf("%s: %s\n", "PPid", ppid);
-    printf("%s: %s\n", "State", process_state);
-    printf("%s: %s\n", "Memory", memory);
-    printf("%s: %s\n", "Threads", thread_count);
+    printf("| %-5s | %-6s | %-20s | %-11s | %-7s  | %-8s | %-10d |\n",
+               pid, ppid , name, process_state, memory, thread_count, fd_count);
     
+
     free(c);
     free(buffer);
     free(value);
@@ -181,18 +191,18 @@ void *read_pid(char *pid, char *data) {
     return "";
 }
 
-void process_table(process *table, char **pids, int pid_count) {
+void process_table(char **pids, int pid_count) {
     int i;
-    char *status;
-    char *data = "";
-
+    printf("+-------+--------+---------------------+--------------+----------+----------+------------+\n");
+    printf("|  PID  | Parent |       Name          |   State      |  Memory  | #Threads | Open Files |\n");
+    printf("+-------+--------+---------------------+--------------+----------+----------+------------+\n");
     for (i = 0; i < pid_count; i++) {
-        status = read_pid(pids[i], data);
+        read_pid(pids[i]);
     }
 }
 
 void clear();
-
+void clrscr();
 
 int main()
 {
@@ -204,11 +214,24 @@ int main()
     //Allocate as many procesess we have
     process *table = malloc(PID_MAX * sizeof(pid_count));
 
-    process_table(table, pids, pid_count);
+    printf("%d", sizeof(process));
+    while (1) {
+        clrscr();
+        process_table(pids, pid_count);
+        sleep(2);
+    }
+    
     return 0;
 }
 
 void clear()
 {
-    printf("\e[1;1H\e[2J");
+   printf("\e[1;1H\e[2J");
+}
+
+#include <stdlib.h>
+
+void clrscr()
+{
+    system("clear");
 }
