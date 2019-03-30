@@ -6,9 +6,13 @@
 #include <fcntl.h> 
 #include <unistd.h>
 #include <signal.h>
+#include <time.h>
 
 #define SIZE 0xffffff
 #define PID_MAX 32768
+#define MAGIC 1900
+
+FILE *output; 
 
 typedef struct {
     char *pid;
@@ -54,6 +58,7 @@ char **get_pids(int *size) {
 }
 
 void build_path(char *pid, char *data, char*folder) {
+    strcpy(data, "");
     strcat(data, "/proc/");
     strcat(data, pid);
     strcat(data, "/");
@@ -64,12 +69,9 @@ void build_path(char *pid, char *data, char*folder) {
 void *read_pid(char *pid) {
     //if (atoi(pid) > 100) return "";
     char *path = malloc(30*sizeof(char));
+    
     build_path(pid, path, "status");
     //printf("%s\n", path);
-    if (strcmp(pid, "697") != 0) {
-    //    return "";
-    }
-
     char *ppid;
     char *name;
     char *process_state;
@@ -80,6 +82,10 @@ void *read_pid(char *pid) {
 
     //Read process info
     int fd = open(path, O_RDONLY);
+    if (fd == -1) {
+        //fprintf(output, "%s\n", path);
+        return "";
+    }
     //Free path from memory
     free(path);
 
@@ -126,24 +132,21 @@ void *read_pid(char *pid) {
 
             strcat(value, "\0");
             if (strcmp(buffer, "Name") == 0) {
-                name = malloc(value_size * sizeof(value));
-                strcpy(name, value);
+                fprintf(output, "| %-19s |", value);
             } else if (strcmp(buffer, "State") == 0) {
-                process_state = malloc(value_size * sizeof(value));
-                strcpy(process_state, value);
+                fprintf(output, " %-12s |", strcmp("S(sleeping)", value) == 0? "Sleeping" : "Active");
             } else if (strcmp(buffer, "Pid") == 0) {
-                pid = malloc(value_size * sizeof(value));
-                strcpy(pid, value);
+                fprintf(output, " %-5s |", value);
             } else if (strcmp(buffer, "PPid") == 0) {
-                ppid = malloc(value_size * sizeof(value));
-                strcpy(ppid, value);
+                fprintf(output, " %-6s |", value);
             } else if (strcmp(buffer, "VmHWM") == 0) {
                 mem_flag = 1;
-                memory = malloc(value_size * sizeof(value));
-                strcpy(memory, value); 
+                fprintf(output, " %-8s |", value);
             } else if (strcmp(buffer, "Threads") == 0) {
-                thread_count = malloc(value_size * sizeof(value));
-                strcpy(thread_count, value); 
+                if (mem_flag == 0) {
+                    fprintf(output," %-8s |", "0 kB");
+                }
+                fprintf(output, " %-8s |", value);
             }
 
             buffer_size = 0;
@@ -171,47 +174,75 @@ void *read_pid(char *pid) {
     build_path(pid, fd_path, "fd");
 
     if ((dir = opendir(fd_path)) != NULL) {
-        while ((ent = readdir(dir)) != NULL) 
-            fd_count++;
+        while ((ent = readdir(dir)) != NULL)  {
+            if (ent->d_type == DT_REG) { /* If the entry is a regular file */
+                fd_count++;
+            } else {
+                fd_count++;
+            }    
+        }
+
+            
         closedir(dir);
+    
     }
     free(fd_path);
+
+    fprintf(output, " %-10d |", fd_count);
     
-    printf("| %-5s | %-6s | %-20s | %-11s | %-7s  | %-8s | %-10d |\n",
-               pid, ppid , name, process_state, memory, thread_count, fd_count);
+    //printf("| %-5s | %-6s | %-20s | %-11s | %-7s  | %-8s | %-10d |\n",
+    //           pid, ppid , name, process_state, memory, thread_count, fd_count);
     
 
     free(c);
     free(buffer);
     free(value);
-    free(pid);
-    free(ppid);
-    if (name != NULL) {
-        //free(name);
-    }
-    //
-    free(process_state);
-    //free(memory);
-    //Free current buffer
-    //free(buffer);
+    fprintf(output, "\n");
     return "";
 }
 
 void process_table(char **pids, int pid_count) {
     int i;
-    printf("+-------+--------+----------------------+--------------+----------+----------+------------+\n");
-    printf("|  PID  | Parent |       Name           |   State      |  Memory  | #Threads | Open Files |\n");
-    printf("+-------+--------+----------------------+--------------+----------+----------+------------+\n");
+    fprintf(output, "+---------------------+--------------+-------+--------+----------+----------+------------+\n");
+    fprintf(output, "|       Name          |   State      | PID   |   PPID |  Memory  | #Threads | Open Files |\n");
+    fprintf(output, "+---------------------+--------------+-------+--------+----------+----------+------------+\n");
     for (i = 0; i < pid_count; i++) {
         read_pid(pids[i]);
     }
+    fprintf(output, "+---------------------+--------------+-------+--------+----------+----------+------------+\n");
 }
 
 void clear();
 void clrscr();
 
+void sig_handler(int sig) {
+    clrscr();
+    time_t t = time(NULL);
+    struct tm tm = *localtime(&t);
+    char filename[100];
+    sprintf(filename, "mytop-status-%d-%d-%d.txt", tm.tm_mday, tm.tm_mon, tm.tm_year + MAGIC);
+    FILE *file = fopen(filename, "w");
+    if (file == NULL) {
+        printf("Cannot create file \n");
+    }
+    output = file;
+
+    int pid_count;
+    char **pids = get_pids(&pid_count);
+    //char **pids = get_pids(&pid_count);
+    //process_table(pids, pid_count);
+    process_table(pids, pid_count);
+
+    fclose(file);    
+    output = stdout;
+}
+
+
+
 int main()
 {
+    signal(SIGINT, sig_handler);
+    output = stdout;
     // Place your magic here
     //clear();
     int pid_count;
@@ -220,12 +251,19 @@ int main()
     //Allocate as many procesess we have
     process *table = malloc(PID_MAX * sizeof(pid_count));
     int c = 0;
-    
+    int i = 0;
     while (1) {
+
+        pids = get_pids(&pid_count);
         clrscr();
-        printf("%d\n", c++);
+        //for (i = 0; i < pid_count; i++) {
+        //    printf("%s ", pids[i]);
+        //}printf("\n");
+
+
         process_table(pids, pid_count);
         sleep(1);
+
     }
     
     return 0;
